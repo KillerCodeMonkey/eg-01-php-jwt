@@ -4,7 +4,7 @@
         private static $instance;
 
         private static function getInstance() {
-            if(is_null(self::$instance)){
+            if (is_null(self::$instance)) {
                 self::$instance = new DSConfig();
             }
 
@@ -25,6 +25,7 @@
                 $this->config["CC_EMAIL"] = getenv("CC_EMAIL");
                 $this->config["CC_NAME"] = getenv("CC_NAME");
                 $this->config["DS_PRIVATE_KEY"] = getenv("DS_PRIVATE_KEY");
+                $this->config["DS_RESPONSE_TYPE"] = getenv("DS_RESPONSE_TYPE");
             } else {
                 $this->config = parse_ini_file('ds_config.ini', true);
             }
@@ -51,37 +52,37 @@
         private function _target_account_id() {
             return $this->config["DS_TARGET_ACCOUNT_ID"];
         }
-        public static  function target_account_id(){
+        public static  function target_account_id() {
             return self::getInstance()->_target_account_id();
         }
         private function _signer_email() {
             return $this->config["SIGNER_EMAIL"];
         }
-        public static  function signer_email(){
+        public static  function signer_email() {
             return self::getInstance()->_signer_email();
         }
-        private function _signer_name(){
+        private function _signer_name() {
             return $this->config["SIGNER_NAME"];
         }
-        public static  function signer_name(){
+        public static  function signer_name() {
             return self::getInstance()->_signer_name();
         }
         private function _cc_email() {
             return $this->config["CC_EMAIL"];
         }
-        public static function cc_email(){
+        public static function cc_email() {
             return self::getInstance()->_cc_email();
         }
-        private function _cc_name(){
+        private function _cc_name() {
             return $this->config["CC_NAME"];
         }
-        public static function cc_name(){
+        public static function cc_name() {
             return self::getInstance()->_cc_name();
         }
         private function _private_key() {
             return $this->config["DS_PRIVATE_KEY"];
         }
-        public static function private_key(){
+        public static function private_key() {
             return self::getInstance()->_private_key();
         }
         public static function aud() {
@@ -99,5 +100,11 @@
         }
         public static function jwt_scope() {
              return "signature";
+        }
+        private function _response_type() {
+            return $this->config["DS_RESPONSE_TYPE"];
+        }
+        public static  function response_type() {
+            return self::getInstance()->_response_type();
         }
    }

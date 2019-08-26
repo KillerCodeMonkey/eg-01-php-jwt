@@ -2,38 +2,36 @@
 use \Firebase\JWT\JWT;
 class ExampleBase {
 
-   const TOKEN_EXPIRATION_IN_SECONDS = 3600; # 1 hour
-   const TOKEN_REPLACEMENT_IN_SECONDS = 600; # 10 minutes
+    const TOKEN_EXPIRATION_IN_SECONDS = 3600; # 1 hour
+    const TOKEN_REPLACEMENT_IN_SECONDS = 600; # 10 minutes
 
-   private $exp = 3600;
+    private $permission_scopes="signature%20impersonation";
+    private $redirect_uri ="https://www.docusign.com";
 
-   private $permission_scopes="signature%20impersonation";
-   private $redirect_uri ="https://www.docusign.com";
+    protected static $expires_in;
+    protected static $access_token;
+    protected static $expiresInTimestamp;
+    protected static $accountID;
+    protected static $base_uri;
+    protected static $account;
+    protected static $apiClient;
 
-   protected static $expires_in;
-   protected static $access_token;
-   protected static $expiresInTimestamp;
-   protected static $accountID;
-   protected static $base_uri;
-   protected static $account;
-   protected static $apiClient;
-
-   public function __construct($client) {
+    public function __construct($client) {
        self::$apiClient = $client;
     }
 
     protected function checkToken() {
-        if(is_null(self::$access_token)
-                || (time() +  ExampleBase::TOKEN_REPLACEMENT_IN_SECONDS) > self::$expiresInTimestamp) {
+        if (is_null(self::$access_token)
+                || (time() + ExampleBase::TOKEN_REPLACEMENT_IN_SECONDS) > self::$expiresInTimestamp) {
             $this->updateToken();
         }
     }
 
-    private function updateToken(){
+    private function updateToken() {
         $this->authToken = $this->configureJwtAuthorizationFlowByKey();
         self::$expiresInTimestamp = time() + self::$expires_in;
 
-        if(is_null(self::$account)) {
+        if (is_null(self::$account)) {
             self::$account = $this->getUserInfo();
         }
 
@@ -46,8 +44,9 @@ class ExampleBase {
      *
      */
     private function configureJwtAuthorizationFlowByKey() {
-        $current_time = time ();
+        $current_time = time();
         $aud = DSConfig::aud();
+        $response_type = DSConfig::response_type();
         $iss = DSConfig::client_id();
 
         $_token = array(
@@ -56,13 +55,13 @@ class ExampleBase {
             "aud" => $aud,
             "scope" => DSConfig::jwt_scope(),
             "nbf" => $current_time,
-            "exp" => $current_time + 60*1000
+            "exp" => $current_time + ExampleBase::TOKEN_EXPIRATION_IN_SECONDS
         );
 
         $private_key = DSConfig::private_key();
-        $jwt  = JWT::encode($_token, $private_key, 'RS256');
+        $jwt = JWT::encode($_token, $private_key, 'RS256');
 
-        printf ("Requesting an access token via the JWT flow...");
+        printf("Requesting an access token via the JWT flow...");
         $headers = array('Accept' => 'application/json');
         $data = array('grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer', 'assertion' => $jwt);
         $body = Unirest\Request\Body::form($data);
@@ -73,8 +72,8 @@ class ExampleBase {
         }
 
         $json = $response->body;
-        if (property_exists ($json, 'error') and $json->{'error'} == 'consent_required' ){
-            $consent_url = "https://{$aud}/oauth/auth?response_type=code&scope={$this->permission_scopes}&client_id={$iss}&redirect_uri={$this->redirect_uri}";
+        if (property_exists ($json, 'error') and $json->{'error'} == 'consent_required' ) {
+            $consent_url = "https://{$aud}/oauth/auth?response_type={$response_type}&scope={$this->permission_scopes}&client_id={$iss}&redirect_uri={$this->redirect_uri}";
             throw new Exception("\n\nC O N S E N T   R E Q U I R E D\n"
             ."Ask the user who will be impersonated to run the following url:\n"
             ."    {$consent_url}\n"
@@ -83,7 +82,7 @@ class ExampleBase {
             ."pre-approve one or more users.\n\n", 401);
         }
 
-        if (property_exists ($json, 'error') or !property_exists ($json, 'access_token')){
+        if (property_exists ($json, 'error') or !property_exists ($json, 'access_token')) {
             throw new Exception("\n\nUnexpected error: {$json->{'error'}}\n\n");
         }
 
@@ -96,7 +95,7 @@ class ExampleBase {
         $config->addDefaultHeader('Authorization' , "Bearer ".self::$access_token);
     }
 
-    private function getUserInfo(){
+    private function getUserInfo() {
         $aud = DSConfig::aud();
         $access_token = self::$access_token;
         $user_info_url="https://{$aud}/oauth/userinfo";
@@ -107,17 +106,17 @@ class ExampleBase {
         $target = DSConfig::target_account_id();
         $accounts = $json->{'accounts'};
 
-        if(is_null($target) or empty($target) or $target === "FALSE"){
-            foreach($accounts as $acct){
-                if($acct->{'is_default'} === true) {
+        if (is_null($target) or empty($target) or $target === "FALSE") {
+            foreach ($accounts as $acct) {
+                if ($acct->{'is_default'} === true) {
                     return $acct;
                 }
             }
         }
-         
+
         # Looking for a specific user account
-        foreach($account as $acct){
-            if($acct->{'account_id'} === $target){
+        foreach ($accounts as $acct) {
+            if ($acct->{'account_id'} === $target) {
                 return $acct;
             }
         }

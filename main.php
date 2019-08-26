@@ -20,7 +20,7 @@
         $envelopesList = $listEnvelopesHandler->listEnvelopes();
         $envelopes = $envelopesList->getEnvelopes();
 
-        if(!is_null($envelopesList)  && count($envelopes) > 2) {
+        if (!is_null($envelopesList) && count($envelopes) > 2) {
             printf("\nResults for %d envelopes were returned. Showing the first two:\n", count($envelopes));
             $envelopesList->setEnvelopes(array($envelopes[0],$envelopes[1]));
         } else {
@@ -38,8 +38,6 @@
             print ("\nAPI error information: \n");
             print ($e->getResponseObject());
         }
-
-
     }
 
     print("\nDone.\n");
